@@ -61,6 +61,11 @@ int main(int argc, char* argv[]) {
 //            << ", timeMs " << sndFile.timems;
     dumpSndFile(sndFile);
 
+    snd_file sndFileModify = process_sox_effect_chain(soxList,
+                                                      dataArr,
+                                                      dataSize,
+                                                      "mp3");
+
     std::ofstream outStream("dataVec.out",
                             std::ios::out | std::ios::binary);
 

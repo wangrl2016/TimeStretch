@@ -1222,6 +1222,14 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                                       const void* data,
                                       size_t size,
                                       const char* filetype) {
+        // 初始化结构体
+        snd_file out_snd;
+        out_snd.buffer = nullptr;
+        out_snd.offset = 0;
+        out_snd.size = 0;
+        out_snd.timems = 0;
+        out_snd.parts.clear();
 
+        return out_snd;
     }
 }
