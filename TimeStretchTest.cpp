@@ -66,6 +66,8 @@ int main(int argc, char* argv[]) {
                                                       dataSize,
                                                       "mp3");
 
+    dumpSndFile(sndFileModify);
+
     std::ofstream outStream("dataVec.out",
                             std::ios::out | std::ios::binary);
 

@@ -1230,6 +1230,39 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         out_snd.timems = 0;
         out_snd.parts.clear();
 
+        if (soxList.empty() && strcasecmp(filetype, "raw") == 0) {
+            // 表示没有效果要处理，同时是裸数据，那么直接通过
+            out_snd.buffer = (char*) data;
+            out_snd.size = size;
+            out_snd.timems = size / 2 / 16000 * 1000;
+            return out_snd;
+        }
+
+        // 将输入构建成为wav的形式
+        char* inbuf = (char*) calloc(size + 44, sizeof(char));
+        if (inbuf == nullptr) {
+            // 分配内存失败
+            LOG(ERROR) << "Calloc buffer failed, size " << size + 44;
+            return out_snd;
+        }
+
+        // 将wav文件头写入到inbuf中
+        writeWAVHeader(inbuf, size, 16000, 1);
+        // 将数据写入到inbuf中
+        memcpy(inbuf + 44, data, size);
+
+        // dump inbuf数据
+        std::ofstream outStream("inbuf.wav",
+                                std::ios::out | std::ios::binary);
+        for (int i = 0; i < size + 44; i++) {
+            outStream.write(inbuf + i, sizeof(char));
+        }
+
+        out_snd.buffer = inbuf;
+        out_snd.offset = 0;
+        out_snd.size = size + 44;
+        out_snd.timems = size / 32;
+
         return out_snd;
     }
 }

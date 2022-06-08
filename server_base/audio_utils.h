@@ -101,9 +101,10 @@ snd_file process_sox_chain_list(std::vector<std::tuple<std::string, int, int>> &
  * @param soxList 实际上std::vector没有作用，相当于size位1，可以通过"tempo=0.94" 104960 65 进行构建
  *                tempo=0.94表示sox音效，104960表示文件大小，65表示phone个数，phone这里没有用到
  * @param data 一串裸数据，比如数据格式为s16le, 声道数量为1, 采样率为16000
- *              可以通过ffplay -f s16le -ac 1 -ar 16000 data进行播放
+ *             可以通过ffplay -f s16le -ac 1 -ar 16000 data进行播放
+ *             后续对音频的所有操作都暗示数据格式必须为s16le，声道数为1，采样率为16000
  * @param size 裸数据的大小，byte为单位，和soxList里面size相同
- * @param filetype 想要得到的文件类型，比如"mp3"
+ * @param filetype 想要得到的文件类型，有"wav", "raw", "mp3"三种类型
  * @return 返回snd_file结构体，buffer存储目标文件的内存；offset表示目前文件相对于buffer起始位置的偏移；
  *          size表示buffer的总大小，文件的大小为(size - offset)bytes；timems表示文件的时长，ms为单位
  *          经过变速后的时长和最初文件的时长不相等；parts目前为空，没有用到
