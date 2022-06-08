@@ -58,18 +58,32 @@ int main(int argc, char* argv[]) {
 //
 //    dumpSndFile(sndFile);
 
-    snd_file sndFileModify = process_sox_effect_chain(soxList,
-                                                      dataArr,
-                                                      dataSize,
-                                                      "mp3");
+    std::vector<std::string> file_types;
+    file_types.emplace_back("mp3");
+    file_types.emplace_back("wav");
 
-    dumpSndFile(sndFileModify);
+    std::vector<std::string> tempo_types;
+    tempo_types.emplace_back("tempo=0.5");
+    tempo_types.emplace_back("tempo=1.0");
+    tempo_types.emplace_back("tempo=1.5");
 
-    // 将内存写入到文件中
-    std::ofstream outStream("sndFile.mp3",
-                            std::ios::out | std::ios::binary);
+    for (auto& file_type : file_types) {
+        for (auto& tempo_type : tempo_types) {
+            soxList[0] = {tempo_type, 123, 456};
+            snd_file sndFileModify = process_sox_effect_chain(soxList,
+                                                              dataArr,
+                                                              dataSize,
+                                                              file_type.c_str());
+            dumpSndFile(sndFileModify);
+        }
 
-    outStream.write((char*) sndFileModify.buffer, (long) sndFileModify.size);
+//        // 将内存写入到文件中
+//        std::ofstream outStream("sndFile.mp3",
+//                                std::ios::out | std::ios::binary);
+//
+//        outStream.write((char*) sndFileModify.buffer, (long) sndFileModify.size);
+
+    }
 
 //    std::ofstream outStream("dataVec.out",
 //                            std::ios::out | std::ios::binary);

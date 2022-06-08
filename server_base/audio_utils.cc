@@ -1298,6 +1298,7 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         char* inBufferData = inbuf;
         int inBufferSize = int(size) + 44;
 
+        // 默认使用MP3进行输出
         sox_encodinginfo_t out_encoding = {
                 SOX_ENCODING_MP3,
                 0,
@@ -1307,6 +1308,11 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                 sox_option_default,
                 sox_false
         };
+
+        if (strcasecmp(filetype, "wav") == 0) {
+            out_encoding.encoding = SOX_ENCODING_FLOAT;
+            out_encoding.compression = 0;
+        }
 
         sox_signalinfo_t out_signal = {
                 16000,
@@ -1323,7 +1329,11 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                                "wav");
 
         uint64_t unique_num = uniqueFileBase.fetch_add(1);
-        std::string file_name = std::to_string(unique_num) + ".mp3";
+        std::string file_name;
+        if (strcasecmp(filetype, "mp3") == 0)
+            file_name = std::to_string(unique_num) + ".mp3";
+        else if (strcasecmp(filetype, "wav") == 0)
+            file_name = std::to_string(unique_num) + ".wav";
 
         out = sox_open_write(file_name.c_str(),
                              &out_signal,
