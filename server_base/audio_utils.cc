@@ -1,6 +1,7 @@
 #include "glog/logging.h"
 #include "server_base/audio_utils.h"
 #include <iostream>
+#include <cassert>
 #include <strings.h>
 #include <stdlib.h>
 #include <math.h>
@@ -1269,22 +1270,96 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
 
         // Reading and writing audio files stored in memory buffers
         // rather than actual files.
+//        char* inBufferData = inbuf;
+//        int inBufferSize = int(size) + 44;
+//
+//        sox_format_t* in, *out;
+//
+//        in = sox_open_mem_read(inBufferData, inBufferSize, NULL, NULL, NULL);
+//        out = sox_open_write("outBuffer.wav", &in->signal, NULL, NULL, NULL, NULL);
+//
+//#define MAX_SAMPLES (size_t)2048
+//        size_t numberRead;
+//        sox_sample_t samples[MAX_SAMPLES];
+//        while ((numberRead = sox_read(in, samples, MAX_SAMPLES))) {
+//            sox_write(out, samples, numberRead);
+//        }
+//        sox_close(in);
+//        sox_close(out);
+
+        // 直接进行变速
+        sox_format_t* in, *out;     // input and output files
+        sox_effects_chain_t* chain;
+        sox_effect_t* e;
+        char* args[10];
+
+        sox_signalinfo_t interm_signal; // intermediate points in the chain.
         char* inBufferData = inbuf;
         int inBufferSize = int(size) + 44;
 
-        sox_format_t* in, *out;
+        sox_encodinginfo_t out_encoding = {
+                SOX_ENCODING_MP3,
+                16,
+                32,
+                sox_option_default,
+                sox_option_default,
+                sox_option_default,
+                sox_false
+        };
+
+        sox_signalinfo_t out_signal = {
+                16000,
+                1,
+                0,
+                0,
+                NULL
+        };
 
         in = sox_open_mem_read(inBufferData, inBufferSize, NULL, NULL, NULL);
-        out = sox_open_write("outBuffer.wav", &in->signal, NULL, NULL, NULL, NULL);
 
-#define MAX_SAMPLES (size_t)2048
-        size_t numberRead;
-        sox_sample_t samples[MAX_SAMPLES];
-        while ((numberRead = sox_read(in, samples, MAX_SAMPLES))) {
-            sox_write(out, samples, numberRead);
+        out = sox_open_write("effectChain.mp3", &out_signal, &out_encoding, NULL, NULL, NULL);
+
+        chain = sox_create_effects_chain(&in->encoding, &out->encoding);
+
+        interm_signal = in->signal; // deep copy
+
+        e = sox_create_effect(sox_find_effect("input"));
+        args[0] = (char*) in;
+        assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
+        assert(sox_add_effect(chain, e, &interm_signal, &in->signal) == SOX_SUCCESS);
+        free(e);
+
+        if (in->signal.rate != out->signal.rate) {
+            e = sox_create_effect(sox_find_effect("rate"));
+            assert(sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+            assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+            free(e);
         }
-        sox_close(in);
+
+        if (in->signal.channels != out->signal.channels) {
+            e = sox_create_effect(sox_find_effect("channels"));
+            assert (sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+            assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+            free(e);
+        }
+
+        e = sox_create_effect(sox_find_effect("tempo"));
+        args[0] = (char*) std::string("0.5").c_str();
+        assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
+        assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+        free(e);
+
+        e = sox_create_effect(sox_find_effect("output"));
+        args[0] = (char*) out;
+        assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
+        assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+        free(e);
+
+        sox_flow_effects(chain, NULL, NULL);
+
+        sox_delete_effects_chain(chain);
         sox_close(out);
+        sox_close(in);
 
         return out_snd;
     }
