@@ -1374,6 +1374,11 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                 assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
                 assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
                 free(e);
+
+                if (command == "tempo") {
+                    // 如果是变速，需要修改时间长度
+                    out_snd.timems = int(double(out_snd.timems) / strtod(param.c_str(), nullptr));
+                }
             } else {
                 e = sox_create_effect(sox_find_effect(effect.c_str()));
                 assert(sox_effect_options(e, 0, nullptr) == SOX_SUCCESS);
