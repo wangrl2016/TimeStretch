@@ -48,7 +48,7 @@ int main(int argc, char* argv[]) {
     // 对音频流进行处理
     std::vector<std::tuple<std::string, int, int>> soxList;
     // 65表示phone count的个数，该函数中只是赋值
-    std::tuple<std::string, int, int> temp = {"tempo=0.94", dataSize, 65};
+    std::tuple<std::string, int, int> temp = {"tempo=0.5", dataSize, 65};
     soxList.push_back(temp);
 
     snd_file sndFile = process_sox_chain_list(soxList,

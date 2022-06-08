@@ -1287,7 +1287,7 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
 //        sox_close(in);
 //        sox_close(out);
 
-        // 直接进行变速
+        // 效果处理
         sox_format_t* in, *out;     // input and output files
         sox_effects_chain_t* chain;
         sox_effect_t* e;
@@ -1299,7 +1299,7 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
 
         sox_encodinginfo_t out_encoding = {
                 SOX_ENCODING_MP3,
-                16,
+                0,
                 32,
                 sox_option_default,
                 sox_option_default,
@@ -1315,9 +1315,18 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                 NULL
         };
 
-        in = sox_open_mem_read(inBufferData, inBufferSize, NULL, NULL, NULL);
+        in = sox_open_mem_read(inBufferData,
+                               inBufferSize,
+                               NULL,
+                               NULL,
+                               "wav");
 
-        out = sox_open_write("effectChain.mp3", &out_signal, &out_encoding, NULL, NULL, NULL);
+        out = sox_open_write("effectChain.mp3",
+                             &out_signal,
+                             &out_encoding,
+                             NULL,
+                             NULL,
+                             NULL);
 
         chain = sox_create_effects_chain(&in->encoding, &out->encoding);
 
@@ -1343,11 +1352,32 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
             free(e);
         }
 
-        e = sox_create_effect(sox_find_effect("tempo"));
-        args[0] = (char*) std::string("0.5").c_str();
-        assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
-        assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
-        free(e);
+        // 增加需要处理的效果
+        std::vector<std::string> effects;
+        effects.reserve(soxList.size());
+        for (auto& l : soxList) {
+            effects.push_back(std::get<0>(l));
+        }
+
+        for (auto& effect : effects) {
+            LOG(INFO) << effect;
+            size_t equal_pos = effect.find('=');
+            if (equal_pos != std::string::npos) {
+                std::string command = effect.substr(0, equal_pos);
+                std::string param = effect.substr(equal_pos + 1);   // 跳过等号
+
+                e = sox_create_effect(sox_find_effect(command.c_str()));
+                args[0] = (char*) param.c_str();
+                assert(sox_effect_options(e, 1, args) == SOX_SUCCESS);
+                assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+                free(e);
+            } else {
+                e = sox_create_effect(sox_find_effect(effect.c_str()));
+                assert(sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+                assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
+                free(e);
+            }
+        }
 
         e = sox_create_effect(sox_find_effect("output"));
         args[0] = (char*) out;
