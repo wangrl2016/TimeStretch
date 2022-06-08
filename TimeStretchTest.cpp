@@ -75,6 +75,15 @@ int main(int argc, char* argv[]) {
                                                               dataSize,
                                                               file_type.c_str());
             dumpSndFile(sndFileModify);
+
+            if (sndFileModify.buffer) {
+                free(sndFileModify.buffer);
+                sndFileModify.buffer = nullptr;
+                sndFileModify.size = 0;
+                sndFileModify.timems = 0;
+                sndFileModify.offset = 0;
+                sndFileModify.parts.clear();
+            }
         }
 
 //        // 将内存写入到文件中
@@ -85,14 +94,20 @@ int main(int argc, char* argv[]) {
 
     }
 
+    // 数据清理
+    if (dataArr) {
+        free(dataArr);
+        dataArr = nullptr;
+    }
+
+    dataVec.clear();
+
 //    std::ofstream outStream("dataVec.out",
 //                            std::ios::out | std::ios::binary);
 //
 //    for (const char& ch : dataVec) {
 //        outStream.write(&ch, sizeof ch);
 //    }
-
-
 
     sox_quit();
 

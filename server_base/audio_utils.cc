@@ -1421,6 +1421,12 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         out_snd.buffer = out_buffer;
         out_snd.size = file_size;
 
+        if (inbuf) {
+            free(inbuf);
+            inbuf = nullptr;
+        }
+        std::remove(file_name.c_str());
+
         return out_snd;
     }
 }
