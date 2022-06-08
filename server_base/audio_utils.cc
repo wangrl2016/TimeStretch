@@ -1217,4 +1217,11 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
     return out_snd;
 }
 */
+
+    snd_file process_sox_effect_chain(std::vector<std::tuple<std::string, int, int>>& soxList,
+                                      const void* data,
+                                      size_t size,
+                                      const char* filetype) {
+
+    }
 }
