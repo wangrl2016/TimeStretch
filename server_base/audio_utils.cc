@@ -1,5 +1,7 @@
 #include "glog/logging.h"
 #include "server_base/audio_utils.h"
+#include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <cassert>
 #include <strings.h>
@@ -7,6 +9,8 @@
 #include <math.h>
 
 namespace WL::Service::Base {
+    // 获取唯一文件名
+    static std::atomic_uint64_t uniqueFileBase = ATOMIC_VAR_INIT(0);
 
 template <>
 void writeFormat<float>(std::ofstream& stream) {
@@ -118,9 +122,6 @@ void dumpSndFile(const snd_file& sndFile) {
               << ", timeMs " << sndFile.timems;
 
     const std::vector<snd_part>& parts = sndFile.parts;
-    if (parts.empty()) {
-        LOG(INFO) << "parts is empty";
-    }
     for (int i = 0; i < parts.size(); i++) {
         LOG(INFO) << "snd_part " << i
                 << ", offset " << parts[i].offset
@@ -1252,12 +1253,12 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         // 将数据写入到inbuf中
         memcpy(inbuf + 44, data, size);
 
-        // dump inbuf数据
-        std::ofstream outStream("inbuf.wav",
-                                std::ios::out | std::ios::binary);
-        for (int i = 0; i < size + 44; i++) {
-            outStream.write(inbuf + i, sizeof(char));
-        }
+//        // dump inbuf数据
+//        std::ofstream outStream("inbuf.wav",
+//                                std::ios::out | std::ios::binary);
+//        for (int i = 0; i < size + 44; i++) {
+//            outStream.write(inbuf + i, sizeof(char));
+//        }
 
         out_snd.buffer = inbuf;
         out_snd.offset = 0;
@@ -1312,21 +1313,24 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                 1,
                 0,
                 0,
-                NULL
+                nullptr
         };
 
         in = sox_open_mem_read(inBufferData,
                                inBufferSize,
-                               NULL,
-                               NULL,
+                               nullptr,
+                               nullptr,
                                "wav");
 
-        out = sox_open_write("effectChain.mp3",
+        uint64_t unique_num = uniqueFileBase.fetch_add(1);
+        std::string file_name = std::to_string(unique_num) + ".mp3";
+
+        out = sox_open_write(file_name.c_str(),
                              &out_signal,
                              &out_encoding,
-                             NULL,
-                             NULL,
-                             NULL);
+                             nullptr,
+                             nullptr,
+                             nullptr);
 
         chain = sox_create_effects_chain(&in->encoding, &out->encoding);
 
@@ -1340,14 +1344,14 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
 
         if (in->signal.rate != out->signal.rate) {
             e = sox_create_effect(sox_find_effect("rate"));
-            assert(sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+            assert(sox_effect_options(e, 0, nullptr) == SOX_SUCCESS);
             assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
             free(e);
         }
 
         if (in->signal.channels != out->signal.channels) {
             e = sox_create_effect(sox_find_effect("channels"));
-            assert (sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+            assert (sox_effect_options(e, 0, nullptr) == SOX_SUCCESS);
             assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
             free(e);
         }
@@ -1360,7 +1364,6 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         }
 
         for (auto& effect : effects) {
-            LOG(INFO) << effect;
             size_t equal_pos = effect.find('=');
             if (equal_pos != std::string::npos) {
                 std::string command = effect.substr(0, equal_pos);
@@ -1373,7 +1376,7 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
                 free(e);
             } else {
                 e = sox_create_effect(sox_find_effect(effect.c_str()));
-                assert(sox_effect_options(e, 0, NULL) == SOX_SUCCESS);
+                assert(sox_effect_options(e, 0, nullptr) == SOX_SUCCESS);
                 assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
                 free(e);
             }
@@ -1385,11 +1388,23 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         assert(sox_add_effect(chain, e, &interm_signal, &out->signal) == SOX_SUCCESS);
         free(e);
 
-        sox_flow_effects(chain, NULL, NULL);
+        sox_flow_effects(chain, nullptr, nullptr);
 
         sox_delete_effects_chain(chain);
         sox_close(out);
         sox_close(in);
+
+        uint64_t file_size = std::filesystem::file_size(file_name);
+
+        // 读文件操作
+        std::ifstream in_stream;
+        in_stream.open(file_name, std::ios::binary);
+
+        char* out_buffer = (char*) calloc(file_size, sizeof(char));
+        in_stream.read((char*) out_buffer, long (sizeof(char)) * long(file_size));
+
+        out_snd.buffer = out_buffer;
+        out_snd.size = file_size;
 
         return out_snd;
     }

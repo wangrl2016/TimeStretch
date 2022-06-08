@@ -24,16 +24,16 @@ int main(int argc, char* argv[]) {
 
     std::vector<char> dataVec;
 
-    if (in.is_open()) {
-        LOG(INFO) << "Read data success";
-    }
+//    if (in.is_open()) {
+//        LOG(INFO) << "Read data success";
+//    }
 
     char c;
     while (in.read(&c, sizeof(c))) {
         dataVec.push_back(c);
     }
 
-    LOG(INFO) << "Data size " << dataVec.size();
+//    LOG(INFO) << "Data size " << dataVec.size();
 
     int dataSize = 104960;
     // byte为单位
@@ -51,15 +51,12 @@ int main(int argc, char* argv[]) {
     std::tuple<std::string, int, int> temp = {"tempo=0.5", dataSize, 65};
     soxList.push_back(temp);
 
-    snd_file sndFile = process_sox_chain_list(soxList,
-                                              dataArr,
-                                              dataSize,
-                                              "mp3");
-
-//    LOG(INFO) << "sndFile offset " << sndFile.offset
-//            << ", size " << sndFile.size
-//            << ", timeMs " << sndFile.timems;
-    dumpSndFile(sndFile);
+//    snd_file sndFile = process_sox_chain_list(soxList,
+//                                              dataArr,
+//                                              dataSize,
+//                                              "mp3");
+//
+//    dumpSndFile(sndFile);
 
     snd_file sndFileModify = process_sox_effect_chain(soxList,
                                                       dataArr,
@@ -68,12 +65,18 @@ int main(int argc, char* argv[]) {
 
     dumpSndFile(sndFileModify);
 
-    std::ofstream outStream("dataVec.out",
+    // 将内存写入到文件中
+    std::ofstream outStream("sndFile.mp3",
                             std::ios::out | std::ios::binary);
 
-    for (const char& ch : dataVec) {
-        outStream.write(&ch, sizeof ch);
-    }
+    outStream.write((char*) sndFileModify.buffer, (long) sndFileModify.size);
+
+//    std::ofstream outStream("dataVec.out",
+//                            std::ios::out | std::ios::binary);
+//
+//    for (const char& ch : dataVec) {
+//        outStream.write(&ch, sizeof ch);
+//    }
 
 
 
