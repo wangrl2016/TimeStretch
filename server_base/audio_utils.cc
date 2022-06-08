@@ -1263,6 +1263,29 @@ snd_file process_sox_chain(std::string sox, const void *data, size_t size, const
         out_snd.size = size + 44;
         out_snd.timems = size / 32;
 
+        if (soxList.empty() && (strcasecmp(filetype, "wav") == 0 || strcasecmp(filetype, "") == 0)) {
+            return out_snd;
+        }
+
+        // Reading and writing audio files stored in memory buffers
+        // rather than actual files.
+        char* inBufferData = inbuf;
+        int inBufferSize = int(size) + 44;
+
+        sox_format_t* in, *out;
+
+        in = sox_open_mem_read(inBufferData, inBufferSize, NULL, NULL, NULL);
+        out = sox_open_write("outBuffer.wav", &in->signal, NULL, NULL, NULL, NULL);
+
+#define MAX_SAMPLES (size_t)2048
+        size_t numberRead;
+        sox_sample_t samples[MAX_SAMPLES];
+        while ((numberRead = sox_read(in, samples, MAX_SAMPLES))) {
+            sox_write(out, samples, numberRead);
+        }
+        sox_close(in);
+        sox_close(out);
+
         return out_snd;
     }
 }
