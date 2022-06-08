@@ -35,10 +35,9 @@ int main(int argc, char* argv[]) {
 
     LOG(INFO) << "Data size " << dataVec.size();
 
-    // byte为单位
-    assert(dataVec.size() == 104960);
-
     int dataSize = 104960;
+    // byte为单位
+    assert(dataVec.size() == dataSize);
 
     char* dataArr = (char*) calloc(104960, sizeof(char));
 
@@ -48,6 +47,7 @@ int main(int argc, char* argv[]) {
 
     // 对音频流进行处理
     std::vector<std::tuple<std::string, int, int>> soxList;
+    // 65表示phone count的个数，该函数中只是赋值
     std::tuple<std::string, int, int> temp = {"tempo=0.94", dataSize, 65};
     soxList.push_back(temp);
 
@@ -56,16 +56,16 @@ int main(int argc, char* argv[]) {
                                               dataSize,
                                               "mp3");
 
-    LOG(INFO) << "sndFile offset " << sndFile.offset
-            << ", size " << sndFile.size
-            << ", timems " << sndFile.timems;
-
+//    LOG(INFO) << "sndFile offset " << sndFile.offset
+//            << ", size " << sndFile.size
+//            << ", timeMs " << sndFile.timems;
+    dumpSndFile(sndFile);
 
     std::ofstream outStream("dataVec.out",
                             std::ios::out | std::ios::binary);
 
-    for (const char& c : dataVec) {
-        outStream.write(&c, sizeof c);
+    for (const char& ch : dataVec) {
+        outStream.write(&ch, sizeof ch);
     }
 
 

@@ -111,6 +111,33 @@ int get_filetype_rate(const char* filetype)
     return 16000;
 }
 
+void dumpSndFile(const snd_file& sndFile) {
+    LOG(INFO) << "snd_file offset " << sndFile.offset
+              << ", size " << sndFile.size
+              << ", timeMs " << sndFile.timems;
+
+    const std::vector<snd_part>& parts = sndFile.parts;
+    if (parts.empty()) {
+        LOG(INFO) << "parts is empty";
+    }
+    for (int i = 0; i < parts.size(); i++) {
+        LOG(INFO) << "snd_part " << i
+                << ", offset " << parts[i].offset
+                << ", length " << parts[i].length
+                << ", startms " << parts[i].startms
+                << ", timems " << parts[i].timems
+                << ", breakms " << parts[i].breakms
+                << ", phonecount " << parts[i].phonecount;
+
+        std::string soxListStr;
+        for (int j = 0; j < parts[i].soxlist.size(); j++) {
+            soxListStr += parts[i].soxlist[j];
+            soxListStr += " ";
+        }
+        LOG(INFO) << soxListStr;
+    }
+}
+
 void* process_sox_decode_wav(const void *data, size_t size, const char* sourcefiletype, size_t *outsize)
 {
     void* outbuf = NULL;

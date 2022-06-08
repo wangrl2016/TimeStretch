@@ -88,6 +88,8 @@ typedef struct snd_file {
   std::vector<snd_part> parts;
 } snd_file;
 
+void dumpSndFile(const snd_file& sndFile);
+
 void* process_sox_decode_wav(const void *data, size_t size, const char* sourcefiletype, size_t *outsize);
 snd_file process_sox_chain_list_type(std::vector<std::tuple<std::string, int, int>> &soxlist, const void *data, size_t size, const char* filetype, const char* sourcefiletype);
 snd_file process_sox_chain_list(std::vector<std::tuple<std::string, int, int>> &soxlist, const void *data, size_t size, const char* filetype);
