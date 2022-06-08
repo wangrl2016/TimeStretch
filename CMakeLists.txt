@@ -15,3 +15,12 @@ target_link_libraries(TimeStretchTest
         glog::glog
         pthread
         sox)
+
+add_executable(MemoryWriteTest
+        MemoryWriteTest.cpp)
+
+target_link_libraries(MemoryWriteTest
+        glog::glog
+        pthread
+        sox)
+
