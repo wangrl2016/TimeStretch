@@ -6,6 +6,7 @@
 #include <fstream>
 #include <vector>
 #include <tuple>
+#include <thread>
 #include "glog/logging.h"
 #include "sox.h"
 #include "server_base/audio_utils.h"
@@ -69,30 +70,66 @@ int main(int argc, char* argv[]) {
 
     for (auto& file_type : file_types) {
         for (auto& tempo_type : tempo_types) {
+
             soxList[0] = {tempo_type, 123, 456};
-            snd_file sndFileModify = process_sox_effect_chain(soxList,
-                                                              dataArr,
-                                                              dataSize,
-                                                              file_type.c_str());
-            dumpSndFile(sndFileModify);
 
-            if (sndFileModify.buffer) {
-                free(sndFileModify.buffer);
-                sndFileModify.buffer = nullptr;
-                sndFileModify.size = 0;
-                sndFileModify.timems = 0;
-                sndFileModify.offset = 0;
-                sndFileModify.parts.clear();
-            }
+            auto lamb = [&soxList, &dataArr, &dataSize, &file_type] {
+                snd_file sndFileModify = process_sox_effect_chain(soxList,
+                                                                  dataArr,
+                                                                  dataSize,
+                                                                  file_type.c_str());
+                dumpSndFile(sndFileModify);
+
+                if (sndFileModify.buffer) {
+                    free(sndFileModify.buffer);
+                    sndFileModify.buffer = nullptr;
+                    sndFileModify.size = 0;
+                    sndFileModify.timems = 0;
+                    sndFileModify.offset = 0;
+                    sndFileModify.parts.clear();
+                }
+            };
+
+            std::thread t(lamb);
+            t.join();
         }
-
 //        // 将内存写入到文件中
 //        std::ofstream outStream("sndFile.mp3",
 //                                std::ios::out | std::ios::binary);
 //
 //        outStream.write((char*) sndFileModify.buffer, (long) sndFileModify.size);
-
     }
+
+    auto lamba = [&soxList, &dataArr, &dataSize] {
+        snd_file sndFileModify = process_sox_effect_chain(soxList,
+                                                          dataArr,
+                                                          dataSize,
+                                                          "mp3");
+        dumpSndFile(sndFileModify);
+
+        if (sndFileModify.buffer) {
+            free(sndFileModify.buffer);
+            sndFileModify.buffer = nullptr;
+            sndFileModify.size = 0;
+            sndFileModify.timems = 0;
+            sndFileModify.offset = 0;
+            sndFileModify.parts.clear();
+        }
+    };
+
+    std::thread t1(lamba);
+    std::thread t2(lamba);
+    std::thread t3(lamba);
+    std::thread t4(lamba);
+    std::thread t5(lamba);
+    std::thread t6(lamba);
+
+    t1.join();
+    t2.join();
+    t3.join();
+    t4.join();
+    t5.join();
+    t6.join();
 
     // 数据清理
     if (dataArr) {

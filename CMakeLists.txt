@@ -13,4 +13,5 @@ add_executable(TimeStretchTest
 
 target_link_libraries(TimeStretchTest
         glog::glog
+        pthread
         sox)
