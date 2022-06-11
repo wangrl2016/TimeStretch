@@ -8,19 +8,17 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 find_package (glog 0.6.0 REQUIRED)
 
 add_executable(TimeStretchTest
-        server_base/audio_utils.cc
         TimeStretchTest.cpp)
 
 target_link_libraries(TimeStretchTest
         glog::glog
-        pthread
-        sox)
+        pthread)
 
-add_executable(MemoryWriteTest
-        MemoryWriteTest.cpp)
-
-target_link_libraries(MemoryWriteTest
-        glog::glog
-        pthread
-        sox)
+#add_executable(MemoryWriteTest
+#        MemoryWriteTest.cpp)
+#
+#target_link_libraries(MemoryWriteTest
+#        glog::glog
+#        pthread
+#        sox)
 
